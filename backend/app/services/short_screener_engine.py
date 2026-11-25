@@ -39,6 +39,7 @@ from services.indicator_cache import (
 logger = logging.getLogger(__name__)
 
 _IST = timezone(timedelta(hours=5, minutes=30))
+HISTORICAL_DB_PATH = Path(__file__).resolve().parent.parent / "data" / "historical_candles.sqlite"
 
 
 def is_market_open() -> bool:
@@ -252,7 +253,7 @@ class ShortScreenerEngine:
         - Live Marketfeed Sync: calls Dhan marketfeed API (/marketfeed/ohlc) to pull real-time intraday prices
         """
         now = time.time()
-        db_path = Path(__file__).resolve().parent.parent / "data" / "historical_candles.sqlite"
+        db_path = HISTORICAL_DB_PATH
         if not db_path.exists():
             db_path = Path("backend/app/data/historical_candles.sqlite").resolve()
 

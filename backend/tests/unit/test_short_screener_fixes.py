@@ -60,8 +60,12 @@ def test_tick_ingestion_updates_ltp_and_rsi():
     sym = engine.symbols[0]
     st = engine.states[sym]
 
-    # Reset low for pure tick tracking test
+    # Reset state and seed deterministic historical closes so Wilder 14 RSI is hermetic
+    st.high = 0.0
     st.low = 0.0
+    st.rsi = 50.0
+    st._rsi_history.clear()
+    st._historical_closes = [1480.0 + ((-1) ** i) * 1.0 for i in range(20)]
 
     # Feed initial tick
     engine.on_tick({
@@ -181,9 +185,59 @@ def test_real_universe_warmup_mode():
     asyncio.run(_test())
 
 
-def test_rsi_historical_convergence_and_stitching():
+def test_rsi_historical_convergence_and_stitching(tmp_path, monkeypatch):
     """Verify RSI calculation converges on 150 bars and stitches prev_close + LTP."""
+    import sqlite3
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+    import services.short_screener_engine as sse_mod
+
+    db_path = tmp_path / "historical_candles.sqlite"
+    ist = ZoneInfo("Asia/Kolkata")
+    base_dt = datetime(2025, 1, 1, 9, 15, tzinfo=ist)
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daily_candles (
+                symbol TEXT NOT NULL,
+                timestamp INTEGER NOT NULL,
+                open REAL NOT NULL,
+                high REAL NOT NULL,
+                low REAL NOT NULL,
+                close REAL NOT NULL,
+                volume REAL NOT NULL,
+                PRIMARY KEY (symbol, timestamp)
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS stock_news_cache (
+                symbol TEXT PRIMARY KEY,
+                display_summary TEXT,
+                articles_json TEXT
+            )
+            """
+        )
+        rows = []
+        price = 140.0
+        for day in range(150):
+            ts = int((base_dt + timedelta(days=day)).timestamp())
+            o = price
+            c = price + (1.2 if day % 2 == 0 else -0.6)
+            rows.append(("GREAVESCOT", ts, o, max(o, c) + 1.0, min(o, c) - 1.0, c, 50000.0 + day * 200.0))
+            price = c
+        conn.executemany(
+            "INSERT OR REPLACE INTO daily_candles (symbol, timestamp, open, high, low, close, volume) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            rows,
+        )
+        conn.commit()
+
+    monkeypatch.setattr(sse_mod, "HISTORICAL_DB_PATH", db_path)
     engine = get_short_screener_engine()
+    monkeypatch.setattr(engine, "refresh_live_quotes_sync", lambda: None)
+    engine.warm_up_universe()
+
     st = engine.states.get("GREAVESCOT")
     assert st is not None
     # Verify historical closes are converged (up to 150 bars)

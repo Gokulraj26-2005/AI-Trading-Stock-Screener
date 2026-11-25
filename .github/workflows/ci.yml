@@ -17,8 +17,8 @@ jobs:
     env:
       PYTHONPATH: backend
       JWT_SECRET: test-jwt-secret-that-is-at-least-32-bytes-long
-      KITE_ENABLED: "false"
-      USE_KITE_MOCK: "true"
+      DHAN_ENABLED: "true"
+      USE_DHAN_MOCK: "true"
       PRODUCTION_MODE: "false"
       FAIL_CLOSED_ON_LIVE_ERROR: "false"
       ARD_COMPUTE_DEVICE: cpu

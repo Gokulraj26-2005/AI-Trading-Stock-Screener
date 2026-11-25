@@ -1,13 +1,66 @@
+import sqlite3
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
 import pytest
 import asyncio
+import services.short_screener_engine as sse_mod
 from services.short_screener_engine import ShortScreenerEngine
 
 
+def _seed_historical_sqlite(db_path, symbols):
+    ist = ZoneInfo("Asia/Kolkata")
+    base_dt = datetime(2025, 1, 1, 9, 15, tzinfo=ist)
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daily_candles (
+                symbol TEXT NOT NULL,
+                timestamp INTEGER NOT NULL,
+                open REAL NOT NULL,
+                high REAL NOT NULL,
+                low REAL NOT NULL,
+                close REAL NOT NULL,
+                volume REAL NOT NULL,
+                PRIMARY KEY (symbol, timestamp)
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS stock_news_cache (
+                symbol TEXT PRIMARY KEY,
+                display_summary TEXT,
+                articles_json TEXT
+            )
+            """
+        )
+        rows = []
+        for idx, sym in enumerate(symbols):
+            price = 1000.0 + (idx * 250.0)
+            for day in range(60):
+                ts = int((base_dt + timedelta(days=day)).timestamp())
+                o = price
+                c = price + (4.5 if day % 2 == 0 else -1.5)
+                rows.append((sym, ts, o, max(o, c) + 2.0, min(o, c) - 2.0, c, 150000.0 + day * 1000.0))
+                price = c
+        conn.executemany(
+            "INSERT OR REPLACE INTO daily_candles (symbol, timestamp, open, high, low, close, volume) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            rows,
+        )
+        conn.commit()
+
+
 @pytest.mark.asyncio
-async def test_warm_up_universe_populates_real_data():
+async def test_warm_up_universe_populates_real_data(tmp_path, monkeypatch):
     """Verify that starting live streaming immediately warms up real data from historical SQLite."""
     symbols = ["RELIANCE", "TCS", "INFY", "SBIN"]
+    db_path = tmp_path / "historical_candles.sqlite"
+    _seed_historical_sqlite(db_path, symbols)
+    monkeypatch.setattr(sse_mod, "HISTORICAL_DB_PATH", db_path)
+
     engine = ShortScreenerEngine(symbols=symbols)
+    monkeypatch.setattr(engine, "refresh_live_quotes_sync", lambda: None)
 
     # Initial state should already be warmed up with real data
     rel = engine.states["RELIANCE"]
@@ -33,10 +86,15 @@ async def test_warm_up_universe_populates_real_data():
 
 
 @pytest.mark.asyncio
-async def test_live_tick_updates_rolling_rsi():
+async def test_live_tick_updates_rolling_rsi(tmp_path, monkeypatch):
     """Verify that incoming ticks update price and recalculate RSI immediately using pre-warmed closes."""
     symbols = ["RELIANCE"]
+    db_path = tmp_path / "historical_candles.sqlite"
+    _seed_historical_sqlite(db_path, symbols)
+    monkeypatch.setattr(sse_mod, "HISTORICAL_DB_PATH", db_path)
+
     engine = ShortScreenerEngine(symbols=symbols)
+    monkeypatch.setattr(engine, "refresh_live_quotes_sync", lambda: None)
     await engine.set_power(True)
 
     rel = engine.states["RELIANCE"]

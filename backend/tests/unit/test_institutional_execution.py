@@ -262,8 +262,9 @@ async def test_watchdog_dynamic_trailing_and_runner():
 # 3. Promotion & Auto-Purge Tests
 # ==============================================================================
 
-def test_promotion_manager_eligibility():
+def test_promotion_manager_eligibility(monkeypatch):
     """Verify 2-way promotion rule."""
+    monkeypatch.setattr(CAPITAL_CONFIG, "PROMOTION_CUTOFF_TIME_IST", "23:59")
     promo_mgr = PromotionManager()
 
     # Setup with score < 85 -> Disqualified
