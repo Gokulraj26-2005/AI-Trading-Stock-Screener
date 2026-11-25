@@ -1,6 +1,4 @@
-Intraday AI Trading Desk
-
-VIA-Agent7 is an NSE intraday equity analysis, order-flow screening, and semi-automated execution platform built with **FastAPI**, **React + TypeScript**, **Lightweight Charts**, **ZeroMQ**, and **DhanHQ v2 / MCP APIs**.
+Intraday AI Trading Desk is an NSE intraday equity analysis, order-flow screening, and semi-automated execution platform built with **FastAPI**, **React + TypeScript**, **Lightweight Charts**, **ZeroMQ**, and **DhanHQ v2 / MCP APIs**.
 
 > [!WARNING]
 > **Trading Risk & Safeguards:** Algorithmic trading carries financial risk. Always verify behavior in mock/sandbox mode (`USE_DHAN_MOCK=true`) before enabling live broker connectivity, and keep `PRODUCTION_MODE=true` + `FAIL_CLOSED_ON_LIVE_ERROR=true` when running live.
