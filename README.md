@@ -1,4 +1,4 @@
-# VIA-Agent7 — Intraday AI Trading Desk
+Intraday AI Trading Desk
 
 VIA-Agent7 is an NSE intraday equity analysis, order-flow screening, and semi-automated execution platform built with **FastAPI**, **React + TypeScript**, **Lightweight Charts**, **ZeroMQ**, and **DhanHQ v2 / MCP APIs**.
 
