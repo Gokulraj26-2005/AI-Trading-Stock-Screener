@@ -1,0 +1,81 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.slim
+    image: intraday-backend:slim
+    gpus: all
+    command: [ "python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000" ]
+    ports:
+      - "8001:8000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+      - TZ=Asia/Kolkata
+      - PYTHONUNBUFFERED=1
+      - ARD_COMPUTE_DEVICE=${ARD_COMPUTE_DEVICE:-cuda}
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-all}
+      - NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+      - CUDA_DEVICE_ORDER=${CUDA_DEVICE_ORDER:-PCI_BUS_ID}
+      - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
+      - OMP_NUM_THREADS=${OMP_NUM_THREADS:-8}
+      - OPENBLAS_NUM_THREADS=${OPENBLAS_NUM_THREADS:-8}
+      - MKL_NUM_THREADS=${MKL_NUM_THREADS:-8}
+      - NUMEXPR_NUM_THREADS=${NUMEXPR_NUM_THREADS:-8}
+    volumes:
+      - ./backend/app:/app/app
+      - ./.env:/app/.env
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request,sys;urllib.request.urlopen('http://localhost:8000/api/health', timeout=3);sys.exit(0)
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    # No external databases needed (in-memory aggregation + SQLite)
+
+  backend-tests:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.slim
+    image: intraday-backend:slim
+    profiles: [ "test" ]
+    working_dir: /workspace
+    command: [ "python", "-m", "pytest", "-q", "backend/tests/unit" ]
+    environment:
+      - PYTHONPATH=backend
+      - JWT_SECRET=test-jwt-secret-that-is-at-least-32-bytes-long
+      - DHAN_ENABLED=true
+      - USE_DHAN_MOCK=true
+      - TZ=Asia/Kolkata
+      - PRODUCTION_MODE=false
+      - FAIL_CLOSED_ON_LIVE_ERROR=false
+      - ARD_COMPUTE_DEVICE=cpu
+    volumes:
+      - ./:/workspace
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: build-stage
+    command: [ "npm", "run", "dev", "--", "--host" ]
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BACKEND_URL=http://backend:8000
+      - VITE_DOCKER=true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+
+networks:
+  default:
+    name: viaagent_default

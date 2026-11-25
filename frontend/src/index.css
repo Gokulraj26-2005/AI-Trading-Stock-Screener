@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Default overrides (empty by default) */
+    --text-color-override: initial;
+    --neon-color-override: initial;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased overflow-x-hidden selection:bg-primary-neon selection:text-white dark:bg-gray-950 dark:text-gray-100;
+    color: var(--text-color-override, inherit);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold tracking-tight;
+    color: var(--text-color-override, inherit);
+  }
+
+  /* Basic Mode Overrides */
+  .basic-mode * {
+    animation: none !important;
+    transition: none !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+
+  .basic-mode .glass-panel,
+  .basic-mode .glass-button,
+  .basic-mode .glass-input {
+    @apply bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800;
+    background-color: white;
+  }
+
+  .dark .basic-mode .glass-panel,
+  .dark .basic-mode .glass-button,
+  .dark .basic-mode .glass-input {
+    background-color: #111827;
+    /* gray-900 */
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-glass rounded-2xl transition-all duration-300;
+  }
+
+  .glass-button {
+    @apply px-4 py-2 rounded-xl font-medium transition-all duration-300 active:scale-95 bg-white/20 hover:bg-white/30 border border-white/20 backdrop-blur-md text-gray-800 dark:text-white shadow-sm hover:shadow-md hover:border-white/40;
+  }
+
+  .glass-input {
+    @apply w-full px-4 py-2 rounded-xl bg-white/10 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none transition-all placeholder-gray-500 dark:placeholder-gray-400 backdrop-blur-md text-gray-900 dark:text-white;
+  }
+}
+
+/* Dynamic Background Animation */
+.bg-blob {
+  @apply absolute rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob;
+}
+
+.dark .bg-blob {
+  @apply mix-blend-screen opacity-30;
+}
+
+/* Modern Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  /* gray-400 with opacity */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.5);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+@keyframes scanTicker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.scan-ticker-track {
+  animation: scanTicker 26s linear infinite;
+}
+
+.scan-ticker-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes nnDashFlow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+.nn-edge-pulse {
+  animation-name: nnDashFlow;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  stroke-linecap: round;
+}
+
+.nn-edge-active {
+  opacity: 0.95;
+}
+
+.nn-edge-blocked {
+  opacity: 0.85;
+}
+
+.nn-edge-idle {
+  opacity: 0.35;
+}

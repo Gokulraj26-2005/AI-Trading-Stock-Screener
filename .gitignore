@@ -1,0 +1,50 @@
+# Added by code-review-graph
+.code-review-graph/
+
+# Python virtual environments, bytecode, and cache artifacts
+.venv/
+venv/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*$py.class
+
+# Python tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node & frontend generated artifacts
+node_modules/
+**/node_modules/
+frontend/dist/
+frontend/.vite/
+**/vite_error.html
+
+# Local environment, secrets, and token caches
+.env
+.env.*
+!.env.example
+**/.dhan_token
+*.pem
+*.key
+
+# Local runtime databases, market caches, and mutable state
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.duckdb
+*.duckdb.wal
+backend/app/data/dhan_instruments.csv
+backend/app/data/watchdog_settings.json
+
+# Logs and local-only stray/export files
+backend/logs/
+*.log
+logs*.txt
+$null
+full_config.yml
